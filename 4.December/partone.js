@@ -2,52 +2,44 @@ const fs = require('fs').promises;
 
 const app = async () => {
     const text = await fs.readFile('./input.txt', 'utf8');
-    const logEntries = text.split(/[\r\n]+/);
+    const logEntriesText = text.split(/[\r\n]+/);
     
-    logEntries.sort(sortFunc);
+    // Make the data into JS objects 
+    const logEntries = [];
+    for (logEntry of logEntriesText) {
+        let type = '';
+        if      (logEntry.includes('Guard'))        { type = 'shift start'}
+        else if (logEntry.includes('falls asleep')) { type = 'sleep start'}
+        else                                        { type = 'sleep end'}
 
+        let id = 0;
+        if (type === 'shift start') { id = parseInt(logEntry.split(' ')[3].replace('#', ''))}
 
-    let guards = [];
-    let currentGuard = {};
-    for (let i = 0; i < logEntries.length; i++) {
-        const date = new Date(logEntries[i].split(']')[0].replace('[',''));
-        const information = logEntries[i].split('] ')[1];
-        
-        // Begin shift
-       if (information.includes('Guard')) {
-            let id = parseInt(information.split(' ')[1].replace('#', ''));
-            const guard = guards.find( (guard) => { return guard.id === id; });
-
-            if (guard) {
-                currentGuard = guard;
-            } else {
-                const newGuard = { id: id, minsAsleep: 0};
-                guards.push(newGuard);
-                currentGuard = newGuard; 
-            }
+        const entry = {
+            date: new Date(logEntry.split(']')[0].replace('[','')),
+            type: type,
+            id: id
         }
-
-        if (information.includes('falls asleep')){
-            
-            //currentGuard.minsAsleep =
-        }
-
+        logEntries.push( entry );
     }
-    guards.sort( (a, b) => {return a.id - b.id} );
-    console.log(guards);
+
+    // Sort entries
+    logEntries.sort( (a, b) => {return a.date - b.date});
     
+    //
+    const guards = [];
+    let currentGuard = null;
+    for (logEntry of logEntries) {
+        if (logEntry.type === 'shift start') {
+            currentGuard = guards.find( (g) => {return g.id === logEntry.id});
+            if (!currentGuard) { guards.push(currentGuard = { id: logEntry.id, sleepTime: 0 }); };
+        } else {logEntry.id = currentGuard.id;}
+    }
+
+
+    guards.sort( (a, b) => { return a.id - b.id});
+    //console.log(guards);
+
+    console.log( logEntries.filter( (entry) => {return entry.id === 3331}));
 }
 app();
-
-const sortFunc = (a, b) => {
-
-    /*const test = '[1518-09-15 00:42] wakes up'
-    const date = test.split(']')[0].replace('[','');
-    console.log(`date : ${date}`);
-    console.log(new Date(date));*/
-
-    const dateA = new Date(a.split(']')[0].replace('[',''));
-    const dateB = new Date(b.split(']')[0].replace('[',''));
-    
-    return dateA - dateB;
-}
