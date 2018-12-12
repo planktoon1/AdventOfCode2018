@@ -15,10 +15,14 @@ const app = async () => {
         let id = 0;
         if (type === 'shift start') { id = parseInt(logEntry.split(' ')[3].replace('#', ''))}
 
+        let date = new Date(logEntry.split(']')[0].replace('[','') + 'Z');
+        let minute = parseInt(logEntry.substring(15,17));
+
         const entry = {
-            date: new Date(logEntry.split(']')[0].replace('[','')),
+            date: date,
             type: type,
-            id: id
+            id: id,
+            minute: minute
         }
         logEntries.push( entry );
     }
@@ -26,20 +30,53 @@ const app = async () => {
     // Sort entries
     logEntries.sort( (a, b) => {return a.date - b.date});
     
-    //
+    // Make list of guards, and add guard id to all log entries
     const guards = [];
     let currentGuard = null;
-    for (logEntry of logEntries) {
+    let startSleepTime = null;
+        for (logEntry of logEntries) {
         if (logEntry.type === 'shift start') {
             currentGuard = guards.find( (g) => {return g.id === logEntry.id});
             if (!currentGuard) { guards.push(currentGuard = { id: logEntry.id, sleepTime: 0 }); };
         } else {logEntry.id = currentGuard.id;}
+
+        if (logEntry.type === 'sleep start') {
+            startSleepTime = logEntry.minute;
+        }
+        
+        if (logEntry.type === 'sleep end') {
+            const minutesAsleep = logEntry.minute - startSleepTime - 1;
+            currentGuard.sleepTime = currentGuard.sleepTime + minutesAsleep;
+            logEntry.sleepStarted = startSleepTime; 
+        }
+
     }
 
 
-    guards.sort( (a, b) => { return a.id - b.id});
-    //console.log(guards);
+    // Find the guard that sleeps the most
+    guards.sort( (a, b) => { return b.sleepTime - a.sleepTime});
+    const sleepingBeauty = guards[0];
 
-    console.log( logEntries.filter( (entry) => {return entry.id === 3331}));
+    const sleepersLogs = logEntries.filter( (entry) => {return (entry.id === sleepingBeauty.id && entry.type === 'sleep end')});
+
+    //console.log(guards);
+    //console.log( sleepersLogs);
+
+    // Make a list of the minutes 00-59 and populate it with the slept minutes of the guard
+    const minutesAsleep = [];
+    for (entry of sleepersLogs) {
+        const startMinute = entry.sleepStarted;
+        const endMinute = entry.minute;
+
+        for (let min = startMinute; min < endMinute; min++) {
+            if ( !minutesAsleep[min]) { minutesAsleep[min] = {minute: min, sleepingFor: 1};}
+            else minutesAsleep[min].sleepingFor = minutesAsleep[min].sleepingFor + 1;
+        }
+    }
+
+    // Get answer for puzzle
+    minutesAsleep.sort( (a,b) => {return b.sleepingFor - a.sleepingFor});
+    console.log( minutesAsleep[0]);
+    console.log( sleepingBeauty);
 }
 app();
