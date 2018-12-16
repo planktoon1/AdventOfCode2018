@@ -14,23 +14,30 @@ const app = async () => {
         return {x: coords[0], y: coords[1], id: id};
     });
 
-    // lowest x = 46, highest x = 352
-    // lowest y = 47, highest y = 359
     // Make 400x400 grid
     const grid = [];
+    const areas = [];
     for (let x = 0; x < 400; x++) {
         grid[x] = [];
         for (let y = 0; y < 400; y++) {            
-            console.log(`working on ${x}, ${y}`);
+            //console.log(`working on ${x}, ${y}`);
             // Search for closest coordinate
-            if (findCoord(y, x)) { grid[x][y] = findCoord(y, x).id}
+            const closestCord = findCoord(y, x);
+            if (closestCord) { grid[x][y] = closestCord.id}
             else {
                 const cc = findClosestCoord(y, x, 1);
                 grid[x][y] = cc;
+                const area = areas.find( (e) => {return e.id === cc});
+                (area) ? (area.size++) : areas.unshift({id: cc, size: 1});
             }
 
         }    
+        console.log(`Working on row ${x + 1} of 400`);
     }
+
+    areas.sort( (a,b) => { return b.size - a.size});
+    console.log(areas);
+    console.log(`The biggest area is: ${areas[0].id} with size: ${areas[0].size}`);
 
     // Make html file for visualization of grid
     for (row of grid) { row.push('<br>'); };
@@ -47,8 +54,6 @@ const app = async () => {
 
 
 
-
-
     // Recursive function that looks for the closest coordinate of the coordinates in the input list¨
     // Starts by looking in all coords within 1 radius, then increments the radius by one every time no coordinate is found
     function findClosestCoord( cx, cy, searchRadius) {
@@ -56,44 +61,41 @@ const app = async () => {
 
         const closestCoord = [];
 
-        for (let x = 0; x < searchRadius; x++) {
-            let xOffset = searchRadius - x; // 3,  2, 1
-            let yOffset = x; // 0,  1, 2 
-            
-            const lookatX = cx + xOffset;
-            const lookatY = cy + yOffset;
-            const coordinate = findCoord( lookatX, lookatY);
-            if ( coordinate) { closestCoord.push( coordinate )};
-        }
-        
-        for (let x = 0; x < searchRadius; x++) {
-            let xOffset = -1 * x; // 0,  -1, -2
-            let yOffset = searchRadius - x; // 3,  2, 1
+        for (let x = 0; (x < searchRadius) && (closestCoord.length < 2); x++) {
 
-            const lookatX = cx + xOffset;
-            const lookatY = cy + yOffset;
-            const coordinate = findCoord( lookatX, lookatY);
-            if ( coordinate) { closestCoord.push( coordinate )};
-        }
-        
-        for (let x = 0; x < searchRadius; x++) {
-            let xOffset = (searchRadius - x) * -1; // -3,  -2, -1
-            let yOffset = -1 * x; // 0,  -1, -2 
+            let lookAtx = searchRadius - x + cx; // 3,  2, 1
+            let lookAty = x + cy; // 0,  1, 2 
 
-            const lookatX = cx + xOffset;
-            const lookatY = cy + yOffset;
-            const coordinate = findCoord( lookatX, lookatY);
-            if ( coordinate) { closestCoord.push( coordinate )};
-        }
-        
-        for (let x = 0; x < searchRadius; x++) {
-            let xOffset = x; // 0,  1, 2 
-            let yOffset = (searchRadius - x) * -1; // -3,  -2, -1
+            // lowest x = 46, highest x = 352
+            // lowest y = 47, highest y = 359
+            if ( lookAtx >= 46 && lookAtx <= 352 && lookAty >= 47 && lookAty <= 359) {
+                const coordinate = findCoord( lookAtx, lookAty);
+                if ( findCoord( lookAtx, lookAty)) { closestCoord.push( coordinate )};
+            }
 
-            const lookatX = cx + xOffset;
-            const lookatY = cy + yOffset;
-            const coordinate = findCoord( lookatX, lookatY);
-            if ( coordinate) { closestCoord.push( coordinate )};
+            lookAtx = x + cx; // 0,  1, 2 
+            lookAty = (searchRadius - x) * -1 + cy; // -3,  -2, -1
+
+            if ( lookAtx >= 46 && lookAtx <= 352 && lookAty >= 47 && lookAty <= 359) {
+                const coordinate = findCoord( lookAtx, lookAty);
+                if ( coordinate) { closestCoord.push( coordinate )};
+            }
+
+            lookAtx = (searchRadius - x) * -1 + cx; // -3,  -2, -1
+            lookAty = -1 * x + cy; // 0,  -1, -2 
+
+            if ( lookAtx >= 46 && lookAtx <= 352 && lookAty >= 47 && lookAty <= 359) {
+                const coordinate = findCoord( lookAtx, lookAty);
+                if ( coordinate) { closestCoord.push( coordinate )};
+            }
+
+            lookAtx = -1 * x + cx; // 0,  -1, -2
+            lookAty = searchRadius - x + cy; // 3,  2, 1
+
+            if ( lookAtx >= 46 && lookAtx <= 352 && lookAty >= 47 && lookAty <= 359) {
+                const coordinate = findCoord( lookAtx, lookAty);
+                if ( coordinate) { closestCoord.push( coordinate )};
+            }
         }
 
         // If one coordinate is found 
