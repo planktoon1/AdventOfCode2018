@@ -19,8 +19,8 @@ const app = async () => {
     const areas = [];
     for (let x = 0; x < 400; x++) {
         grid[x] = [];
-        for (let y = 0; y < 400; y++) {            
-            //console.log(`working on ${x}, ${y}`);
+        console.log(`Working on row ${x + 1} of 400`);  
+        for (let y = 0; y < 400; y++) {
             // Search for closest coordinate
             const closestCord = findCoord(y, x);
             if (closestCord) { grid[x][y] = closestCord.id}
@@ -28,30 +28,27 @@ const app = async () => {
                 const cc = findClosestCoord(y, x, 1);
                 grid[x][y] = cc;
                 const area = areas.find( (e) => {return e.id === cc});
-                (area) ? (area.size++) : areas.unshift({id: cc, size: 1});
+                const isInfinite = (x === 0 || x === 399 || y === 0 || y === 399);
+                if (area && isInfinite) {area.size ++; area.isInfinite = true}
+                else if(area) {area.size++;}
+                else {areas.unshift({id: cc, size: 2, isInfinite: isInfinite});}
             }
 
         }    
-        console.log(`Working on row ${x + 1} of 400`);
+        
     }
 
-    areas.sort( (a,b) => { return b.size - a.size});
+    
+    // *****************ANSWER ****************
+    const nonInfiniteAreas = areas.filter( (area) => { return area.isInfinite === false});
+    nonInfiniteAreas.sort( (a,b) => { return b.size - a.size});
     console.log(areas);
-    console.log(`The biggest area is: ${areas[0].id} with size: ${areas[0].size}`);
+    console.log(`The biggest non-infinite area is: ${nonInfiniteAreas[0].id} with size: ${nonInfiniteAreas[0].size}`);
 
     // Make html file for visualization of grid
     for (row of grid) { row.push('<br>'); };
     grid[0].unshift('');
     fs.writeFile('output.html', `<span style="font-family: monospace">${grid}</span>`);
-
-    // *****************ANSWER ****************
-    // this program took 10 minutes to run, and i could from the html file visually see the areas
-    // i decided i didnt wanna try to optimize and retry, and ended up simply using the browsers 'find'
-    // function to count the area size. Not really a super valid solution, but i just wanted to move on
-
-
-
-
 
 
     // Recursive function that looks for the closest coordinate of the coordinates in the input list¨
